@@ -1,0 +1,13 @@
+my:
+ name:
+  family:
+   test: reza1
+name: Ali
+age: 31
+address:
+  city: Shiraz
+  street: Enghelab
+  zip: 12345
+skills:
+  - Python
+  - Go

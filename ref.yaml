@@ -1,0 +1,13 @@
+name: Ali
+address:
+  city: Tehran
+  street: Enghelab
+skills:
+  - Python
+  - Java
+  - C++
+age: 30
+my:
+ name:
+  family:
+   test: reza
