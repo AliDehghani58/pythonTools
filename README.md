@@ -1,5 +1,3 @@
-Here is the complete solution translated into English. 
-
 Your request: A Python program to semantically compare two YAML files, pinpointing differences, missing fields (present in the reference but not in the second file), and extra fields (present in the second file but not in the reference), with a senior-level, meticulous approach.
 
 Below is a robust, fully recursive solution using `pyyaml`. It handles nested dictionaries, lists, and primitive values, providing clear paths to every discrepancy.
