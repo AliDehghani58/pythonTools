@@ -1,0 +1,112 @@
+# 1. Define application configuration (ConfigMap)
+# Used for storing non-sensitive configuration data, such as environment variables
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-app-config
+data:
+  APP_COLOR: "blue"
+  APP_MODE: "production"
+---
+# 2. Define sensitive information (Secret)
+# Used for storing sensitive data, e.g., database passwords. Note: values must be Base64 encoded
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-app-secret
+type: Opaque
+data:
+  DB_PASSWORD: c3VwZXJzZWNyZXRwYXNzd29yZA==  # Base64 encoded "supersecretpassword"
+---
+# 3. Define the application deployment (Deployment)
+# This is the primary workload resource, defining how to run and manage your application Pods
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 3  # Specify running 3 Pod replicas for high availability
+  selector:
+    matchLabels:
+      app: my-app
+  strategy:  # Define update strategy. Default is RollingUpdate for zero-downtime deployments
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:  # Pod template, defining the specific configuration for the Pod
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app-container
+        image: nginx:1.27  # Using Nginx image as an example
+        ports:
+        - containerPort: 80
+        env:  # Read environment variables from ConfigMap and Secret
+        - name: APP_COLOR
+          valueFrom:
+            configMapKeyRef:
+              name: my-app-config
+              key: APP_COLOR
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: my-app-secret
+              key: DB_PASSWORD
+        resources:  # Set resource requests and limits, crucial for cluster stability
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        livenessProbe:  # Liveness probe, checks if the container is alive; restarts if not
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:  # Readiness probe, checks if the container is ready to receive traffic
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+# 4. Define the Service
+# Used to expose the Deployment as a stable network service
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  selector:
+    app: my-app
+  ports:
+  - protocol: TCP
+    port: 80          # Service port
+    targetPort: 80    # Container application port
+  type: ClusterIP     # Default type, only accessible within the cluster
+---
+# 5. Define the Ingress
+# Used to expose the Service outside the cluster, providing HTTP/HTTPS routing
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app-ingress
+spec:
+  rules:
+  - host: myapp.example.com  # Please replace this domain with your actual domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-app-service
+            port:
+              number: 80
